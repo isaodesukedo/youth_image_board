@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase, Space, ImageItem } from '@/lib/supabase'
 import PasswordGate from '@/components/PasswordGate'
 import AddSpaceModal from '@/components/AddSpaceModal'
@@ -34,6 +34,8 @@ const INIT_3F: AreaDef[] = [
   { key: '機械置き場',   x:48, y:38, w:22, h:28, zIndex:1, fontSize:2 },
 ]
 
+const LAYOUT_KEY = 'floor_layout_v1'
+
 export default function Home() {
   const [spaces, setSpaces] = useState<Space[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
@@ -44,13 +46,53 @@ export default function Home() {
   const [editSpace, setEditSpace] = useState<Space | null>(null)
   const [addImageOpen, setAddImageOpen] = useState(false)
   const [detailImage, setDetailImage] = useState<ImageItem | null>(null)
-  const [editMode, setEditMode] = useState(false)
+
+  const [editMode1F, setEditMode1F] = useState(false)
+  const [editMode2F, setEditMode2F] = useState(false)
+  const [editMode3F, setEditMode3F] = useState(false)
+
   const [areas1F, setAreas1F] = useState(INIT_1F)
   const [areas2F, setAreas2F] = useState(INIT_2F)
   const [areas3F, setAreas3F] = useState(INIT_3F)
   const [syms1F, setSyms1F] = useState<Symbol[]>([])
   const [syms2F, setSyms2F] = useState<Symbol[]>([])
   const [syms3F, setSyms3F] = useState<Symbol[]>([])
+  const [layoutLoaded, setLayoutLoaded] = useState(false)
+
+  // Supabaseからレイアウトを読み込む
+  const loadLayout = async () => {
+    const { data } = await supabase.from('layouts').select('data').eq('id', LAYOUT_KEY).single()
+    if (data?.data) {
+      const d = data.data as any
+      if (d.areas1F) setAreas1F(d.areas1F)
+      if (d.areas2F) setAreas2F(d.areas2F)
+      if (d.areas3F) setAreas3F(d.areas3F)
+      if (d.syms1F) setSyms1F(d.syms1F)
+      if (d.syms2F) setSyms2F(d.syms2F)
+      if (d.syms3F) setSyms3F(d.syms3F)
+    }
+    setLayoutLoaded(true)
+  }
+
+  // Supabaseにレイアウトを保存
+  const saveLayout = async (a1: AreaDef[], a2: AreaDef[], a3: AreaDef[], s1: Symbol[], s2: Symbol[], s3: Symbol[]) => {
+    const payload = { areas1F: a1, areas2F: a2, areas3F: a3, syms1F: s1, syms2F: s2, syms3F: s3 }
+    await supabase.from('layouts').upsert({ id: LAYOUT_KEY, data: payload, updated_at: new Date().toISOString() })
+  }
+
+  // 編集モードをOFFにしたときに自動保存
+  const handleSetEditMode1F = (v: boolean) => {
+    setEditMode1F(v)
+    if (!v) saveLayout(areas1F, areas2F, areas3F, syms1F, syms2F, syms3F)
+  }
+  const handleSetEditMode2F = (v: boolean) => {
+    setEditMode2F(v)
+    if (!v) saveLayout(areas1F, areas2F, areas3F, syms1F, syms2F, syms3F)
+  }
+  const handleSetEditMode3F = (v: boolean) => {
+    setEditMode3F(v)
+    if (!v) saveLayout(areas1F, areas2F, areas3F, syms1F, syms2F, syms3F)
+  }
 
   const load = async () => {
     const { data: s } = await supabase.from('spaces').select('*').order('floor').order('created_at', { ascending: true })
@@ -69,8 +111,14 @@ export default function Home() {
     setLoadingImages(false)
   }
 
-  // スペース編集保存後にマップも更新
-  const handleSpaceSaved = () => {
+  // スペースを追加・削除・編集したらマップのkey名も同期
+  const handleSpaceSaved = (oldName?: string, newName?: string) => {
+    if (oldName && newName && oldName !== newName) {
+      const rename = (areas: AreaDef[]) => areas.map(a => a.key === oldName ? { ...a, key: newName } : a)
+      setAreas1F(prev => rename(prev))
+      setAreas2F(prev => rename(prev))
+      setAreas3F(prev => rename(prev))
+    }
     load()
   }
 
@@ -82,7 +130,10 @@ export default function Home() {
     load()
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    loadLayout()
+  }, [])
 
   return (
     <PasswordGate>
@@ -99,37 +150,51 @@ export default function Home() {
             <p style={{ color: '#78716c', fontSize: 11, marginBottom: 8 }}>📐 実際の図面</p>
             <img
               src="https://ogjcaupnyokrzgunwfbg.supabase.co/storage/v1/object/public/youth_image/floorplan.png"
-              alt="図面"
-              style={{ width: '100%', borderRadius: 8, display: 'block' }}
+              alt="図面" style={{ width: '100%', borderRadius: 8, display: 'block' }}
               onError={e => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
             />
           </div>
 
           {/* イメージボード図面 */}
           <div style={{ background: '#1c1917', borderRadius: 16, padding: 12, marginBottom: 24, border: '1px solid #292524' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <p style={{ color: '#78716c', fontSize: 11 }}>🎨 イメージボード図面</p>
-              <button onClick={() => setEditMode(!editMode)}
-                style={{ background: editMode ? '#f97316' : '#292524', border: 'none', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: editMode ? 600 : 400 }}>
-                {editMode ? '✅ 編集完了' : '✏️ 配置を編集'}
-              </button>
-            </div>
+            <p style={{ color: '#78716c', fontSize: 12, marginBottom: 12, fontWeight: 500 }}>🎨 イメージボード図面</p>
+            <p style={{ color: '#57534e', fontSize: 11, marginBottom: 12 }}>
+              各フロアの「✏️ 編集」ボタンで配置を変更できます。編集完了時に自動保存されます。
+            </p>
 
-            <p style={{ color: '#78716c', fontSize: 11, marginBottom: 6, textAlign: 'center' }}>1F オープン空間</p>
-            <FloorPlanEditor areas={areas1F} setAreas={setAreas1F} symbols={syms1F} setSymbols={setSyms1F}
-              spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 80 82" onSpaceClick={openSpace} floorLabel="1F" />
-
-            <p style={{ color: '#78716c', fontSize: 11, margin: '10px 0 6px', textAlign: 'center' }}>2F 静かな空間</p>
-            <FloorPlanEditor areas={areas2F} setAreas={setAreas2F} symbols={syms2F} setSymbols={setSyms2F}
-              spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 66 76" onSpaceClick={openSpace} floorLabel="2F" />
-
-            <p style={{ color: '#78716c', fontSize: 11, margin: '10px 0 6px', textAlign: 'center' }}>3F 事務所</p>
-            <FloorPlanEditor areas={areas3F} setAreas={setAreas3F} symbols={syms3F} setSymbols={setSyms3F}
-              spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 72 70" onSpaceClick={openSpace} floorLabel="3F" />
+            {layoutLoaded && (
+              <>
+                <FloorPlanEditor
+                  floorId="1f" areas={areas1F} setAreas={setAreas1F}
+                  symbols={syms1F} setSymbols={setSyms1F}
+                  spaces={spaces} counts={counts}
+                  editMode={editMode1F} setEditMode={handleSetEditMode1F}
+                  viewBox="0 0 80 82" onSpaceClick={openSpace} floorLabel="1F オープン空間"
+                />
+                <FloorPlanEditor
+                  floorId="2f" areas={areas2F} setAreas={setAreas2F}
+                  symbols={syms2F} setSymbols={setSyms2F}
+                  spaces={spaces} counts={counts}
+                  editMode={editMode2F} setEditMode={handleSetEditMode2F}
+                  viewBox="0 0 66 76" onSpaceClick={openSpace} floorLabel="2F 静かな空間"
+                />
+                <FloorPlanEditor
+                  floorId="3f" areas={areas3F} setAreas={setAreas3F}
+                  symbols={syms3F} setSymbols={setSyms3F}
+                  spaces={spaces} counts={counts}
+                  editMode={editMode3F} setEditMode={handleSetEditMode3F}
+                  viewBox="0 0 72 70" onSpaceClick={openSpace} floorLabel="3F 事務所"
+                />
+              </>
+            )}
           </div>
 
-          {/* スペース一覧 */}
+          {/* スペース一覧（マップと連動） */}
           {[1,2,3].map(floor => {
+            // マップ上のスペース名を収集
+            const mapKeys = new Set([
+              ...areas1F.map(a=>a.key), ...areas2F.map(a=>a.key), ...areas3F.map(a=>a.key)
+            ])
             const fs = spaces.filter(s => s.floor === floor)
             if (fs.length === 0) return null
             const floorLabel: Record<number,string> = {1:'1F オープン空間', 2:'2F 静かな空間', 3:'3F 事務所'}
@@ -168,7 +233,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* スペース詳細ポップアップ */}
         {selectedSpace && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 40, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setSelectedSpace(null)}>
             <div style={{ background: '#1c1917', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 640, border: '1px solid #44403c', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
@@ -250,7 +314,7 @@ export default function Home() {
         )}
 
         {addSpaceOpen && <AddSpaceModal onClose={() => setAddSpaceOpen(false)} onAdded={load} />}
-        {editSpace && <EditSpaceModal space={editSpace} onClose={() => setEditSpace(null)} onSaved={handleSpaceSaved} />}
+        {editSpace && <EditSpaceModal space={editSpace} onClose={() => setEditSpace(null)} onSaved={() => handleSpaceSaved()} />}
         {addImageOpen && selectedSpace && (
           <AddImageModal spaceId={selectedSpace.id} onClose={() => setAddImageOpen(false)} onAdded={() => { load(); if (selectedSpace) openSpace(selectedSpace) }} />
         )}
