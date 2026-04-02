@@ -6,20 +6,6 @@ import AddSpaceModal from '@/components/AddSpaceModal'
 import EditSpaceModal from '@/components/EditSpaceModal'
 import AddImageModal from '@/components/AddImageModal'
 
-// 間取り図のSVGエリア定義（図面に合わせた座標）
-const FLOOR_AREAS: Record<string, { x: number; y: number; w: number; h: number }> = {
-  '倉庫A':       { x: 4,  y: 4,  w: 30, h: 28 },
-  '倉庫B':       { x: 35, y: 4,  w: 12, h: 18 },
-  'トイレ':      { x: 35, y: 32, w: 12, h: 14 },
-  '事務所':      { x: 4,  y: 48, w: 43, h: 36 },
-  '2Fメインホール': { x: 52, y: 4,  w: 28, h: 48 },
-  '洗面脱衣場':  { x: 52, y: 56, w: 14, h: 28 },
-  '浴室':        { x: 66, y: 56, w: 14, h: 28 },
-  'キッチン':    { x: 84, y: 4,  w: 14, h: 34 },
-  '屋内ベランダ':{ x: 84, y: 44, w: 14, h: 20 },
-  '機械置き場':  { x: 84, y: 66, w: 14, h: 18 },
-}
-
 export default function Home() {
   const [spaces, setSpaces] = useState<Space[]>([])
   const [counts, setCounts] = useState<Record<string, number>>({})
@@ -58,71 +44,127 @@ export default function Home() {
 
   useEffect(() => { load() }, [])
 
-  const floorLabel: Record<number, string> = { 1: '1F', 2: '2F', 3: '3F' }
-  const floors = [1, 2, 3]
+  // 1F SVGエリア定義（viewBox 0 0 100 100）
+  const areas1F = [
+    { key: '音楽スタジオ',       x: 22, y: 4,  w: 28, h: 22 },
+    { key: 'ダンス・ジムスペース', x: 52, y: 4,  w: 24, h: 22 },
+    { key: 'カラオケ・フォトブース', x: 22, y: 27, w: 28, h: 16 },
+    { key: 'コミュニティスペース', x: 22, y: 44, w: 54, h: 24 },
+    { key: 'クラフトスペース',    x: 4,  y: 4,  w: 16, h: 64 },
+    { key: '男子トイレ',         x: 52, y: 44, w: 12, h: 14 },
+    { key: '洋式トイレ(1F)',     x: 65, y: 44, w: 11, h: 14 },
+    { key: '倉庫(1F)',           x: 52, y: 27, w: 24, h: 15 },
+    { key: '倉庫A',              x: 22, y: 69, w: 54, h: 15 },
+  ]
+
+  // 2F SVGエリア定義
+  const areas2F = [
+    { key: '音楽スタジオ(2F防音)', x: 4,  y: 4,  w: 30, h: 20 },
+    { key: 'ダンススペース(2F)',   x: 36, y: 4,  w: 30, h: 20 },
+    { key: '読書・勉強スペース',   x: 4,  y: 26, w: 45, h: 30 },
+    { key: '個室・秘密基地',       x: 51, y: 26, w: 15, h: 30 },
+    { key: '洋式トイレ(2F)',      x: 36, y: 26, w: 13, h: 14 },
+    { key: 'ボルダリング',        x: 4,  y: 58, w: 30, h: 20 },
+    { key: '洗面脱衣場',          x: 36, y: 58, w: 15, h: 20 },
+    { key: '浴室',               x: 52, y: 58, w: 14, h: 20 },
+  ]
+
+  // 3F SVGエリア定義
+  const areas3F = [
+    { key: '事務所(3F)',    x: 4,  y: 4,  w: 44, h: 35 },
+    { key: 'キッチン',     x: 50, y: 4,  w: 24, h: 35 },
+    { key: '屋内ベランダ', x: 4,  y: 42, w: 44, h: 30 },
+    { key: '機械置き場',   x: 50, y: 42, w: 24, h: 30 },
+  ]
+
+  const getSpace = (name: string) => spaces.find(s => s.name === name)
+  const FLOOR_H = 220
 
   return (
     <PasswordGate>
       <main style={{ minHeight: '100vh', background: '#0c0a09', color: 'white', paddingBottom: 80 }}>
-        <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
 
           {/* Header */}
           <div style={{ marginBottom: 24 }}>
             <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>🏠 場作りボード</h1>
-            <p style={{ color: '#a8a29e', fontSize: 14 }}>間取りのスペースをタップしてイメージを共創しよう</p>
+            <p style={{ color: '#a8a29e', fontSize: 14 }}>スペースをタップしてイメージを共創しよう</p>
           </div>
 
-          {/* 間取り図 SVG */}
-          <div style={{ background: '#1c1917', borderRadius: 16, padding: 16, marginBottom: 24, border: '1px solid #292524' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#78716c', marginBottom: 8, paddingLeft: '4%' }}>
-              <span style={{ width: '43%', textAlign: 'center' }}>1F</span>
-              <span style={{ width: '28%', textAlign: 'center' }}>2F</span>
-              <span style={{ width: '16%', textAlign: 'center' }}>3F</span>
+          {/* 間取り図 */}
+          <div style={{ background: '#1c1917', borderRadius: 16, padding: '12px 12px 16px', marginBottom: 24, border: '1px solid #292524' }}>
+
+            {/* 1F */}
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ color: '#78716c', fontSize: 11, textAlign: 'center', marginBottom: 4 }}>1F オープン空間</p>
+              <svg viewBox="0 0 80 85" width="100%" style={{ display: 'block', border: '1px solid #44403c', borderRadius: 8 }}>
+                <rect x="0" y="0" width="80" height="85" fill="#111" rx="2"/>
+                {areas1F.map(a => {
+                  const sp = getSpace(a.key)
+                  if (!sp) return null
+                  const count = counts[sp.id] || 0
+                  return (
+                    <g key={a.key} onClick={() => openSpace(sp)} style={{ cursor: 'pointer' }}>
+                      <rect x={a.x} y={a.y} width={a.w} height={a.h} fill={sp.color + '33'} stroke={sp.color} strokeWidth="0.5" rx="1"/>
+                      <text x={a.x + a.w/2} y={a.y + a.h/2 - (count>0?2.5:0)} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="3" fontWeight="500">{a.key}</text>
+                      {count > 0 && <text x={a.x + a.w/2} y={a.y + a.h/2 + 4} textAnchor="middle" dominantBaseline="middle" fill={sp.color} fontSize="2.5">📷{count}</text>}
+                    </g>
+                  )
+                })}
+              </svg>
             </div>
-            <svg viewBox="0 0 100 90" width="100%" style={{ display: 'block' }}>
-              {/* 外枠 */}
-              <rect x="3" y="3" width="46" height="83" fill="none" stroke="#44403c" strokeWidth="0.4" rx="1"/>
-              <rect x="51" y="3" width="30" height="83" fill="none" stroke="#44403c" strokeWidth="0.4" rx="1"/>
-              <rect x="83" y="3" width="16" height="83" fill="none" stroke="#44403c" strokeWidth="0.4" rx="1"/>
 
-              {spaces.map(space => {
-                const area = FLOOR_AREAS[space.name]
-                if (!area) return null
-                const count = counts[space.id] || 0
-                const isSelected = selectedSpace?.id === space.id
-                return (
-                  <g key={space.id} onClick={() => openSpace(space)} style={{ cursor: 'pointer' }}>
-                    <rect
-                      x={area.x} y={area.y} width={area.w} height={area.h}
-                      fill={space.color + (isSelected ? '55' : '22')}
-                      stroke={space.color}
-                      strokeWidth={isSelected ? 0.8 : 0.4}
-                      rx="0.5"
-                    />
-                    <text x={area.x + area.w / 2} y={area.y + area.h / 2 - (count > 0 ? 2.5 : 0)}
-                      textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="2.8" fontWeight="500">
-                      {space.name}
-                    </text>
-                    {count > 0 && (
-                      <text x={area.x + area.w / 2} y={area.y + area.h / 2 + 4}
-                        textAnchor="middle" dominantBaseline="middle" fill={space.color} fontSize="2.2">
-                        📷{count}
-                      </text>
-                    )}
-                  </g>
-                )
-              })}
-            </svg>
+            {/* 2F */}
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ color: '#78716c', fontSize: 11, textAlign: 'center', marginBottom: 4 }}>2F 静かな空間</p>
+              <svg viewBox="0 0 68 80" width="100%" style={{ display: 'block', border: '1px solid #44403c', borderRadius: 8 }}>
+                <rect x="0" y="0" width="68" height="80" fill="#111" rx="2"/>
+                {areas2F.map(a => {
+                  const sp = getSpace(a.key)
+                  if (!sp) return null
+                  const count = counts[sp.id] || 0
+                  return (
+                    <g key={a.key} onClick={() => openSpace(sp)} style={{ cursor: 'pointer' }}>
+                      <rect x={a.x} y={a.y} width={a.w} height={a.h} fill={sp.color + '33'} stroke={sp.color} strokeWidth="0.5" rx="1"/>
+                      <text x={a.x + a.w/2} y={a.y + a.h/2 - (count>0?2.5:0)} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="3" fontWeight="500">{a.key}</text>
+                      {count > 0 && <text x={a.x + a.w/2} y={a.y + a.h/2 + 4} textAnchor="middle" dominantBaseline="middle" fill={sp.color} fontSize="2.5">📷{count}</text>}
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+
+            {/* 3F */}
+            <div>
+              <p style={{ color: '#78716c', fontSize: 11, textAlign: 'center', marginBottom: 4 }}>3F 事務所</p>
+              <svg viewBox="0 0 76 75" width="100%" style={{ display: 'block', border: '1px solid #44403c', borderRadius: 8 }}>
+                <rect x="0" y="0" width="76" height="75" fill="#111" rx="2"/>
+                {areas3F.map(a => {
+                  const sp = getSpace(a.key)
+                  if (!sp) return null
+                  const count = counts[sp.id] || 0
+                  return (
+                    <g key={a.key} onClick={() => openSpace(sp)} style={{ cursor: 'pointer' }}>
+                      <rect x={a.x} y={a.y} width={a.w} height={a.h} fill={sp.color + '33'} stroke={sp.color} strokeWidth="0.5" rx="1"/>
+                      <text x={a.x + a.w/2} y={a.y + a.h/2 - (count>0?2.5:0)} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="3" fontWeight="500">{a.key}</text>
+                      {count > 0 && <text x={a.x + a.w/2} y={a.y + a.h/2 + 4} textAnchor="middle" dominantBaseline="middle" fill={sp.color} fontSize="2.5">📷{count}</text>}
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
           </div>
 
-          {/* スペース一覧（フロア別） */}
-          {floors.map(floor => {
+          {/* スペース一覧 */}
+          {[1,2,3].map(floor => {
             const fs = spaces.filter(s => s.floor === floor)
             if (fs.length === 0) return null
+            const floorLabel: Record<number,string> = {1:'1F オープン空間', 2:'2F 静かな空間', 3:'3F 事務所'}
+            const floorColor: Record<number,string> = {1:'#f97316', 2:'#3b82f6', 3:'#10b981'}
             return (
               <div key={floor} style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 6, height: 20, borderRadius: 3, background: floor === 1 ? '#8b5cf6' : floor === 2 ? '#3b82f6' : '#10b981' }} />
+                  <div style={{ width: 6, height: 20, borderRadius: 3, background: floorColor[floor] }} />
                   <span style={{ fontWeight: 500 }}>{floorLabel[floor]}</span>
                   <span style={{ color: '#78716c', fontSize: 13 }}>{fs.length}スペース</span>
                 </div>
@@ -132,11 +174,10 @@ export default function Home() {
                       <button onClick={() => openSpace(space)}
                         style={{ width: '100%', borderRadius: 12, padding: 14, textAlign: 'left', cursor: 'pointer', background: space.color + '18', border: `1px solid ${space.color}50`, color: 'white' }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: space.color, marginBottom: 6 }} />
-                        <div style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.3 }}>{space.name}</div>
-                        {space.description && <div style={{ color: '#78716c', fontSize: 12, marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{space.description}</div>}
+                        <div style={{ fontWeight: 500, fontSize: 13, lineHeight: 1.3 }}>{space.name}</div>
+                        {space.description && <div style={{ color: '#78716c', fontSize: 11, marginTop: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{space.description}</div>}
                         <div style={{ color: space.color, fontSize: 12, marginTop: 6 }}>{counts[space.id] ? `📷 ${counts[space.id]}枚` : '画像なし'}</div>
                       </button>
-                      {/* 編集ボタン */}
                       <button onClick={e => { e.stopPropagation(); setEditSpace(space) }}
                         style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.4)', border: 'none', color: '#a8a29e', borderRadius: 6, width: 24, height: 24, cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         ✏️
@@ -148,7 +189,6 @@ export default function Home() {
             )
           })}
 
-          {/* スペース追加 */}
           <button onClick={() => setAddSpaceOpen(true)}
             style={{ width: '100%', background: 'transparent', border: '1px dashed #57534e', color: '#78716c', borderRadius: 12, padding: 16, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <span style={{ fontSize: 18 }}>＋</span> スペースを追加
@@ -159,28 +199,27 @@ export default function Home() {
         {selectedSpace && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 40, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={() => setSelectedSpace(null)}>
             <div style={{ background: '#1c1917', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 640, border: '1px solid #44403c', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-              {/* ヘッダー */}
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #292524', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: selectedSpace.color }} />
-                    <h2 style={{ fontWeight: 500, fontSize: 18 }}>{selectedSpace.name}</h2>
-                    <span style={{ color: '#78716c', fontSize: 13, background: '#292524', padding: '2px 8px', borderRadius: 99, border: '1px solid #44403c' }}>{selectedSpace.floor}F</span>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #292524', flexShrink: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 14, height: 14, borderRadius: '50%', background: selectedSpace.color }} />
+                      <h2 style={{ fontWeight: 500, fontSize: 18 }}>{selectedSpace.name}</h2>
+                      <span style={{ color: '#78716c', fontSize: 12, background: '#292524', padding: '2px 8px', borderRadius: 99, border: '1px solid #44403c' }}>{selectedSpace.floor}F</span>
+                    </div>
+                    {selectedSpace.description && (
+                      <p style={{ color: '#a8a29e', fontSize: 13, marginTop: 6, marginLeft: 24, lineHeight: 1.6 }}>{selectedSpace.description}</p>
+                    )}
                   </div>
-                  {selectedSpace.description && <p style={{ color: '#a8a29e', fontSize: 13, marginTop: 4, marginLeft: 24 }}>{selectedSpace.description}</p>}
+                  <button onClick={() => setSelectedSpace(null)} style={{ background: 'none', border: 'none', color: '#a8a29e', fontSize: 22, cursor: 'pointer' }}>×</button>
                 </div>
-                <button onClick={() => setSelectedSpace(null)} style={{ background: 'none', border: 'none', color: '#a8a29e', fontSize: 22, cursor: 'pointer', flexShrink: 0 }}>×</button>
               </div>
-
-              {/* 画像追加ボタン */}
               <div style={{ padding: '12px 20px', borderBottom: '1px solid #292524', flexShrink: 0 }}>
                 <button onClick={() => setAddImageOpen(true)}
-                  style={{ width: '100%', background: 'transparent', border: '1px dashed #57534e', color: '#78716c', borderRadius: 10, padding: '10px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  style={{ width: '100%', background: 'transparent', border: '1px dashed #57534e', color: '#78716c', borderRadius: 10, padding: 10, cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <span>＋</span> イメージを追加
                 </button>
               </div>
-
-              {/* 画像グリッド */}
               <div style={{ overflowY: 'auto', padding: 16, flex: 1 }}>
                 {loadingImages ? (
                   <div style={{ textAlign: 'center', padding: 40, color: '#78716c' }}>読み込み中...</div>
@@ -211,7 +250,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* 画像詳細モーダル */}
+        {/* 画像詳細 */}
         {detailImage && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setDetailImage(null)}>
             <div style={{ background: '#1c1917', borderRadius: 16, width: '100%', maxWidth: 400, border: '1px solid #44403c', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
