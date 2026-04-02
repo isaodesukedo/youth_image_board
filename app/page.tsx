@@ -5,33 +5,33 @@ import PasswordGate from '@/components/PasswordGate'
 import AddSpaceModal from '@/components/AddSpaceModal'
 import EditSpaceModal from '@/components/EditSpaceModal'
 import AddImageModal from '@/components/AddImageModal'
-import FloorPlanEditor, { AreaDef } from '@/components/FloorPlanEditor'
+import FloorPlanEditor, { AreaDef, Symbol } from '@/components/FloorPlanEditor'
 
 const INIT_1F: AreaDef[] = [
-  { key: '音楽スタジオ',          x: 22, y: 4,  w: 28, h: 20 },
-  { key: 'ダンス・ジムスペース',   x: 52, y: 4,  w: 24, h: 20 },
-  { key: 'カラオケ・フォトブース', x: 22, y: 26, w: 28, h: 14 },
-  { key: 'コミュニティスペース',   x: 22, y: 42, w: 54, h: 22 },
-  { key: 'クラフトスペース',       x: 4,  y: 4,  w: 16, h: 60 },
-  { key: '男子トイレ',             x: 52, y: 26, w: 12, h: 14 },
-  { key: '洋式トイレ(1F)',         x: 65, y: 26, w: 11, h: 14 },
-  { key: '倉庫A',                  x: 22, y: 66, w: 54, h: 14 },
+  { key: '音楽スタジオ',          x:22, y:4,  w:28, h:20, zIndex:1, fontSize:2 },
+  { key: 'ダンス・ジムスペース',   x:52, y:4,  w:24, h:20, zIndex:1, fontSize:2 },
+  { key: 'カラオケ・フォトブース', x:22, y:26, w:28, h:14, zIndex:1, fontSize:2 },
+  { key: 'コミュニティスペース',   x:22, y:42, w:54, h:22, zIndex:1, fontSize:2 },
+  { key: 'クラフトスペース',       x:4,  y:4,  w:16, h:60, zIndex:1, fontSize:2 },
+  { key: '男子トイレ',             x:52, y:26, w:12, h:14, zIndex:2, fontSize:1.8 },
+  { key: '洋式トイレ(1F)',         x:65, y:26, w:11, h:14, zIndex:2, fontSize:1.8 },
+  { key: '倉庫A',                  x:22, y:66, w:54, h:14, zIndex:1, fontSize:2 },
 ]
 const INIT_2F: AreaDef[] = [
-  { key: '音楽スタジオ(2F防音)', x: 4,  y: 4,  w: 30, h: 18 },
-  { key: 'ダンススペース(2F)',    x: 36, y: 4,  w: 28, h: 18 },
-  { key: '読書・勉強スペース',    x: 4,  y: 24, w: 45, h: 28 },
-  { key: '個室・秘密基地',        x: 51, y: 24, w: 13, h: 28 },
-  { key: '洋式トイレ(2F)',        x: 36, y: 24, w: 13, h: 12 },
-  { key: 'ボルダリング',          x: 4,  y: 54, w: 30, h: 20 },
-  { key: '洗面脱衣場',            x: 36, y: 54, w: 14, h: 20 },
-  { key: '浴室',                  x: 52, y: 54, w: 12, h: 20 },
+  { key: '音楽スタジオ(2F防音)', x:4,  y:4,  w:30, h:18, zIndex:1, fontSize:2 },
+  { key: 'ダンススペース(2F)',    x:36, y:4,  w:28, h:18, zIndex:1, fontSize:2 },
+  { key: '読書・勉強スペース',    x:4,  y:24, w:45, h:28, zIndex:1, fontSize:2 },
+  { key: '個室・秘密基地',        x:51, y:24, w:13, h:28, zIndex:1, fontSize:2 },
+  { key: '洋式トイレ(2F)',        x:36, y:24, w:13, h:12, zIndex:2, fontSize:1.8 },
+  { key: 'ボルダリング',          x:4,  y:54, w:30, h:20, zIndex:1, fontSize:2 },
+  { key: '洗面脱衣場',            x:36, y:54, w:14, h:20, zIndex:1, fontSize:2 },
+  { key: '浴室',                  x:52, y:54, w:12, h:20, zIndex:1, fontSize:2 },
 ]
 const INIT_3F: AreaDef[] = [
-  { key: '事務所(3F)',    x: 4,  y: 4,  w: 42, h: 32 },
-  { key: 'キッチン',     x: 48, y: 4,  w: 22, h: 32 },
-  { key: '屋内ベランダ', x: 4,  y: 38, w: 42, h: 28 },
-  { key: '機械置き場',   x: 48, y: 38, w: 22, h: 28 },
+  { key: '事務所(3F)',    x:4,  y:4,  w:42, h:32, zIndex:1, fontSize:2 },
+  { key: 'キッチン',     x:48, y:4,  w:22, h:32, zIndex:1, fontSize:2 },
+  { key: '屋内ベランダ', x:4,  y:38, w:42, h:28, zIndex:1, fontSize:2 },
+  { key: '機械置き場',   x:48, y:38, w:22, h:28, zIndex:1, fontSize:2 },
 ]
 
 export default function Home() {
@@ -48,6 +48,9 @@ export default function Home() {
   const [areas1F, setAreas1F] = useState(INIT_1F)
   const [areas2F, setAreas2F] = useState(INIT_2F)
   const [areas3F, setAreas3F] = useState(INIT_3F)
+  const [syms1F, setSyms1F] = useState<Symbol[]>([])
+  const [syms2F, setSyms2F] = useState<Symbol[]>([])
+  const [syms3F, setSyms3F] = useState<Symbol[]>([])
 
   const load = async () => {
     const { data: s } = await supabase.from('spaces').select('*').order('floor').order('created_at', { ascending: true })
@@ -64,6 +67,11 @@ export default function Home() {
     const { data } = await supabase.from('images').select('*').eq('space_id', space.id).order('created_at', { ascending: false })
     setSpaceImages(data || [])
     setLoadingImages(false)
+  }
+
+  // スペース編集保存後にマップも更新
+  const handleSpaceSaved = () => {
+    load()
   }
 
   const handleDeleteImage = async (imgId: string) => {
@@ -101,28 +109,23 @@ export default function Home() {
           <div style={{ background: '#1c1917', borderRadius: 16, padding: 12, marginBottom: 24, border: '1px solid #292524' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <p style={{ color: '#78716c', fontSize: 11 }}>🎨 イメージボード図面</p>
-              <button
-                onClick={() => setEditMode(!editMode)}
+              <button onClick={() => setEditMode(!editMode)}
                 style={{ background: editMode ? '#f97316' : '#292524', border: 'none', color: 'white', borderRadius: 8, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: editMode ? 600 : 400 }}>
                 {editMode ? '✅ 編集完了' : '✏️ 配置を編集'}
               </button>
             </div>
 
-            {editMode && (
-              <div style={{ background: '#292524', borderRadius: 8, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#a8a29e' }}>
-                <p style={{ margin: 0 }}>• <strong style={{ color: 'white' }}>ドラッグ</strong>：スペースを移動</p>
-                <p style={{ margin: '4px 0 0' }}>• <strong style={{ color: '#f97316' }}>右下オレンジ■</strong>をドラッグ：サイズ変更</p>
-              </div>
-            )}
-
             <p style={{ color: '#78716c', fontSize: 11, marginBottom: 6, textAlign: 'center' }}>1F オープン空間</p>
-            <FloorPlanEditor areas={areas1F} setAreas={setAreas1F} spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 80 82" onSpaceClick={openSpace} />
+            <FloorPlanEditor areas={areas1F} setAreas={setAreas1F} symbols={syms1F} setSymbols={setSyms1F}
+              spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 80 82" onSpaceClick={openSpace} floorLabel="1F" />
 
             <p style={{ color: '#78716c', fontSize: 11, margin: '10px 0 6px', textAlign: 'center' }}>2F 静かな空間</p>
-            <FloorPlanEditor areas={areas2F} setAreas={setAreas2F} spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 66 76" onSpaceClick={openSpace} />
+            <FloorPlanEditor areas={areas2F} setAreas={setAreas2F} symbols={syms2F} setSymbols={setSyms2F}
+              spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 66 76" onSpaceClick={openSpace} floorLabel="2F" />
 
             <p style={{ color: '#78716c', fontSize: 11, margin: '10px 0 6px', textAlign: 'center' }}>3F 事務所</p>
-            <FloorPlanEditor areas={areas3F} setAreas={setAreas3F} spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 72 70" onSpaceClick={openSpace} />
+            <FloorPlanEditor areas={areas3F} setAreas={setAreas3F} symbols={syms3F} setSymbols={setSyms3F}
+              spaces={spaces} counts={counts} editMode={editMode} viewBox="0 0 72 70" onSpaceClick={openSpace} floorLabel="3F" />
           </div>
 
           {/* スペース一覧 */}
@@ -219,7 +222,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* 画像詳細 */}
         {detailImage && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setDetailImage(null)}>
             <div style={{ background: '#1c1917', borderRadius: 16, width: '100%', maxWidth: 400, border: '1px solid #44403c', overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
@@ -248,7 +250,7 @@ export default function Home() {
         )}
 
         {addSpaceOpen && <AddSpaceModal onClose={() => setAddSpaceOpen(false)} onAdded={load} />}
-        {editSpace && <EditSpaceModal space={editSpace} onClose={() => setEditSpace(null)} onSaved={load} />}
+        {editSpace && <EditSpaceModal space={editSpace} onClose={() => setEditSpace(null)} onSaved={handleSpaceSaved} />}
         {addImageOpen && selectedSpace && (
           <AddImageModal spaceId={selectedSpace.id} onClose={() => setAddImageOpen(false)} onAdded={() => { load(); if (selectedSpace) openSpace(selectedSpace) }} />
         )}
